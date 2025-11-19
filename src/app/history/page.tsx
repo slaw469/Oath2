@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HistoryStats from "@/components/HistoryStats";
 import HistoryContent from "@/components/HistoryContent";
@@ -6,7 +5,6 @@ import HistoryContent from "@/components/HistoryContent";
 export default function HistoryPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
-      <Header />
       <main className="flex flex-1 justify-center p-4 sm:p-8">
         <div className="w-full max-w-7xl">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">

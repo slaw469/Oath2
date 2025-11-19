@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LiveFeed from "@/components/LiveFeed";
 import ActiveBattles from "@/components/ActiveBattles";
@@ -9,7 +8,6 @@ import StaffPicks from "@/components/StaffPicks";
 export default function ArenaPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
-      <Header />
       <main className="flex flex-1 justify-center p-4 sm:p-8">
         <div className="w-full max-w-7xl">
           <div

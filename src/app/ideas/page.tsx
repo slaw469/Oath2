@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import OathGenerator from "@/components/OathGenerator";
 import CuratedOaths from "@/components/CuratedOaths";
@@ -8,7 +7,6 @@ import TrendingOaths from "@/components/TrendingOaths";
 export default function IdeasPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
-      <Header />
       <main className="flex flex-1 flex-col items-center gap-16 p-4 py-12 sm:p-8 sm:py-16">
         <div className="w-full max-w-7xl">
           <section className="mb-16 text-center">

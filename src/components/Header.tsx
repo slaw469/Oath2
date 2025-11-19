@@ -1,14 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const Header = () => {
   const pathname = usePathname();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Don't show header on landing page
+  if (pathname === '/') {
+    return null;
+  }
 
   const navLinks = [
-    { href: '/', label: 'Home' },
+    { href: '/dashboard', label: 'Home' },
     { href: '/arena', label: 'Arena' },
     { href: '/ideas', label: 'Ideas' },
     { href: '/friends', label: 'Friends' },
@@ -53,13 +71,38 @@ const Header = () => {
             <span className="material-symbols-outlined">notifications</span>
             <div className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-background-dark bg-danger"></div>
           </button>
-          <div
-            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-            style={{
-              backgroundImage:
-                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBCGEW-TcN_Tp7s7y0VXCdHL0I7ZUF-OrgnRybLVOHdNKGylDWtUPytIp30AQHj6Z2XMPBRym_kQ3d56DUPkCAZrVQntWIpb6wHaCaM57OVd4VdoG9eIQT9kk-xNluuBNtAFE2hgOv85nPk-ZOwK07ur9vu5uY7Ed02PZrcYMgDHYlF3o_BMnf-3HCg_0QHKf7VLz2HJvKMiodGHSatcZxa5kTqdMqld64sreTCGQhr3iD6JwMr0MjYriknqRbuyFCAB9lQLI4am-Cl")',
-            }}
-          ></div>
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 cursor-pointer transition-opacity hover:opacity-80"
+              style={{
+                backgroundImage:
+                  'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBCGEW-TcN_Tp7s7y0VXCdHL0I7ZUF-OrgnRybLVOHdNKGylDWtUPytIp30AQHj6Z2XMPBRym_kQ3d56DUPkCAZrVQntWIpb6wHaCaM57OVd4VdoG9eIQT9kk-xNluuBNtAFE2hgOv85nPk-ZOwK07ur9vu5uY7Ed02PZrcYMgDHYlF3o_BMnf-3HCg_0QHKf7VLz2HJvKMiodGHSatcZxa5kTqdMqld64sreTCGQhr3iD6JwMr0MjYriknqRbuyFCAB9lQLI4am-Cl")',
+              }}
+            />
+            {isProfileOpen && (
+              <div className="absolute right-0 mt-2 w-48 rounded-lg bg-surface border border-white/10 shadow-lg overflow-hidden">
+                <div className="p-3 border-b border-white/10">
+                  <p className="text-sm font-medium text-white">Steven</p>
+                  <p className="text-xs text-white/60">steven@oath.com</p>
+                </div>
+                <Link
+                  href="/settings"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="block px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors"
+                >
+                  Settings
+                </Link>
+                <Link
+                  href="/"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="block px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors border-t border-white/10"
+                >
+                  Logout
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

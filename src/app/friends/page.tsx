@@ -1,4 +1,3 @@
-import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import FriendsStats from "@/components/FriendsStats";
 import TopRivals from "@/components/TopRivals";
@@ -9,7 +8,6 @@ import SuggestedConnections from "@/components/SuggestedConnections";
 export default function FriendsPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col">
-      <Header />
       <main className="flex flex-1 justify-center p-4 sm:p-8">
         <div className="w-full max-w-7xl">
           <div className="mb-6 rounded-lg bg-surface/50 p-6">
