@@ -4,7 +4,7 @@ const Hero = () => {
   return (
     <section className="relative h-screen">
       <Image
-        src="https://via.placeholder.com/1920x1080"
+        src="/hero-image.png"
         alt="Hero Image"
         fill
         style={{
