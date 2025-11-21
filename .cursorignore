@@ -1,0 +1,6 @@
+# Cursor-specific ignore file
+# This allows editing files that are in .gitignore but needed for development
+
+# Allow editing .env.local for development setup
+!.env.local
+

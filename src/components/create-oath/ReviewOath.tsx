@@ -1,3 +1,11 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useDbUser } from '@/hooks/useDbUser';
+import { createSoloOath, createOath } from '@/actions/oaths';
+import toast from 'react-hot-toast';
+
 interface ReviewOathProps {
   onBack: () => void;
   oathData: any;
@@ -46,10 +54,79 @@ const getDaysUntil = (dateString: string) => {
 };
 
 export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
-  const handleCreateOath = () => {
-    // This will be implemented later with actual functionality
-    console.log("Creating oath:", oathData);
-    alert("Oath creation will be implemented in the next phase!");
+  const router = useRouter();
+  const { dbUser } = useDbUser();
+  const [isCreating, setIsCreating] = useState(false);
+
+  const handleCreateOath = async () => {
+    if (!dbUser) {
+      toast.error('You must be logged in to create an oath');
+      return;
+    }
+
+    setIsCreating(true);
+
+    try {
+      let result;
+
+      if (oathData.type === 'solo') {
+        // Create solo oath
+        result = await createSoloOath(dbUser.id, {
+          title: oathData.title,
+          description: oathData.description,
+          category: oathData.category,
+          type: 'DAILY', // Default to DAILY for now
+          startDate: new Date(),
+          endDate: new Date(oathData.endDate),
+          stakeAmount: oathData.stake,
+          currencyType: oathData.currencyType || 'GEMS',
+          privacy: oathData.privacy || 'public',
+        });
+      } else if (oathData.type === 'versus') {
+        // Create versus oath
+        if (!oathData.opponent) {
+          toast.error('Please select an opponent');
+          setIsCreating(false);
+          return;
+        }
+
+        const verificationPrompt = `Verify that the user completed their daily commitment for: ${oathData.title}. ${oathData.description}`;
+
+        result = await createOath(dbUser.id, {
+          title: oathData.title,
+          description: oathData.description,
+          type: 'DAILY',
+          startDate: new Date(),
+          endDate: new Date(oathData.endDate),
+          stakeAmount: oathData.stake,
+          currencyType: oathData.currencyType || 'GEMS',
+          verificationPrompt,
+          participantUserIds: [dbUser.id, oathData.opponent.id],
+        });
+      } else {
+        toast.error('Only solo and versus oaths are supported right now');
+        setIsCreating(false);
+        return;
+      }
+
+      if (result.success) {
+        if (oathData.type === 'versus') {
+          toast.success('⚔️ Challenge sent! Waiting for opponent to accept.');
+        } else {
+          toast.success('🎯 Oath created successfully!');
+        }
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1000);
+      } else {
+        toast.error(result.error || 'Failed to create oath');
+        setIsCreating(false);
+      }
+    } catch (error) {
+      console.error('Error creating oath:', error);
+      toast.error('An unexpected error occurred');
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -83,7 +160,9 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
           {/* Stakes */}
           <div className="rounded-lg bg-background-dark p-4">
             <div className="mb-1 text-xs text-white/60">Stakes</div>
-            <div className="font-bold text-primary">${oathData.stake.toFixed(2)}</div>
+            <div className="font-bold text-primary">
+              {oathData.currencyType === 'GEMS' ? `💎 ${oathData.stake.toLocaleString()}` : `$${oathData.stake.toFixed(2)}`}
+            </div>
           </div>
 
           {/* Duration */}
@@ -103,11 +182,14 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
             <div className="rounded-lg bg-background-dark p-4 md:col-span-2">
               <div className="mb-1 text-xs text-white/60">Opponent</div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{oathData.opponent.avatar}</span>
-                <span className="font-bold text-white">{oathData.opponent.name}</span>
-                <span className="ml-auto text-sm text-white/60">
-                  {oathData.opponent.winRate}% Win Rate
-                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-lg font-bold text-primary">
+                  {oathData.opponent.photoURL ? (
+                    <img src={oathData.opponent.photoURL} alt={oathData.opponent.displayName || oathData.opponent.email} className="h-10 w-10 rounded-full" />
+                  ) : (
+                    (oathData.opponent.displayName || oathData.opponent.email).charAt(0).toUpperCase()
+                  )}
+                </div>
+                <span className="font-bold text-white">{oathData.opponent.displayName || oathData.opponent.email}</span>
               </div>
             </div>
           )}
@@ -130,7 +212,7 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
         <ul className="space-y-2 text-sm text-orange-200/80">
           <li className="flex items-start gap-2">
             <span className="mt-1">•</span>
-            <span>You commit to ${oathData.stake.toFixed(2)} for this oath.</span>
+            <span>You commit to {oathData.currencyType === 'GEMS' ? `💎 ${oathData.stake.toLocaleString()}` : `$${oathData.stake.toFixed(2)}`} for this oath.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1">•</span>
@@ -188,9 +270,10 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
         </button>
         <button
           onClick={handleCreateOath}
-          className="flex-1 rounded-full bg-primary px-8 py-4 text-lg font-bold text-black transition-all hover:bg-primary/90 hover:scale-[1.02]"
+          disabled={isCreating}
+          className="flex-1 rounded-full bg-primary px-8 py-4 text-lg font-bold text-black transition-all hover:bg-primary/90 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Create Oath 🎯
+          {isCreating ? 'Creating...' : 'Create Oath 🎯'}
         </button>
       </div>
     </div>

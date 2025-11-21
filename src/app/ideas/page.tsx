@@ -3,6 +3,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import OathGenerator from '@/components/OathGenerator';
+import CuratedOaths from '@/components/CuratedOaths';
+import RandomOath from '@/components/RandomOath';
+import TrendingOaths from '@/components/TrendingOaths';
 
 export default function IdeasPage() {
   const { user, loading } = useAuth();
@@ -31,24 +35,45 @@ export default function IdeasPage() {
 
   return (
     <div className="min-h-screen bg-background-dark">
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">
-            <span className="text-primary">Ideas</span> & Inspiration
+      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-8">
+        {/* Hero Section */}
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold text-white md:text-5xl">
+            Don&apos;t know what to bet on? Start here.
           </h1>
-          <p className="mt-2 text-lg text-white/60">
-            Discover new challenges and oath ideas
+          <p className="mt-3 text-lg text-white/60">
+            Describe what you&apos;re struggling with, and we&apos;ll turn it into an Oath with real stakes.
           </p>
         </div>
 
-        <div className="rounded-lg bg-surface border border-white/10 p-12 text-center">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/20">
-            <span className="material-symbols-outlined text-5xl text-primary">lightbulb</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
-          <p className="text-white/60 max-w-md mx-auto">
-            This section will feature curated oath ideas, trending challenges, and inspiration from the community.
+        {/* Oath Generator Section */}
+        <div className="mb-16">
+          <OathGenerator />
+        </div>
+
+        {/* Curated Oaths Section */}
+        <div className="mb-16 flex justify-center">
+          <CuratedOaths />
+        </div>
+
+        {/* Random Oath Section */}
+        <div className="mb-16 flex justify-center">
+          <RandomOath />
+        </div>
+
+        {/* Trending Oaths Section */}
+        <div className="flex justify-center">
+          <TrendingOaths />
+        </div>
+
+        {/* Footer CTA */}
+        <div className="mt-12 text-center">
+          <p className="text-sm text-white/60">
+            All Oaths are customizable. You can adjust frequency, duration, and stake before you confirm.
           </p>
+          <button className="mt-6 text-sm font-medium text-primary hover:underline">
+            View all your active Oaths →
+          </button>
         </div>
       </main>
     </div>

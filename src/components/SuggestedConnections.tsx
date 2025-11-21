@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import toast from 'react-hot-toast';
 
 const SuggestedConnections = () => {
   return (
@@ -24,10 +27,16 @@ const SuggestedConnections = () => {
               <p className="text-xs text-white/60">Friend of Alex</p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="h-8 rounded-full bg-white/10 px-3 text-xs font-medium text-white/80 hover:bg-white/20">
+              <button 
+                onClick={() => toast('Suggestions feature coming soon!')}
+                className="h-8 rounded-full bg-white/10 px-3 text-xs font-medium text-white/80 hover:bg-white/20"
+              >
                 Ignore
               </button>
-              <button className="h-8 rounded-full bg-primary/20 px-3 text-xs font-bold text-primary hover:bg-primary/30">
+              <button 
+                onClick={() => toast('Suggestions feature coming soon!')}
+                className="h-8 rounded-full bg-primary/20 px-3 text-xs font-bold text-primary hover:bg-primary/30"
+              >
                 Add
               </button>
             </div>
@@ -45,10 +54,16 @@ const SuggestedConnections = () => {
               <p className="text-xs text-white/60">Friend of Jenna</p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="h-8 rounded-full bg-white/10 px-3 text-xs font-medium text-white/80 hover:bg-white/20">
+              <button 
+                onClick={() => toast('Suggestions feature coming soon!')}
+                className="h-8 rounded-full bg-white/10 px-3 text-xs font-medium text-white/80 hover:bg-white/20"
+              >
                 Ignore
               </button>
-              <button className="h-8 rounded-full bg-primary/20 px-3 text-xs font-bold text-primary hover:bg-primary/30">
+              <button 
+                onClick={() => toast('Suggestions feature coming soon!')}
+                className="h-8 rounded-full bg-primary/20 px-3 text-xs font-bold text-primary hover:bg-primary/30"
+              >
                 Add
               </button>
             </div>

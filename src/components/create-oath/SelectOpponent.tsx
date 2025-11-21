@@ -1,4 +1,9 @@
-import { useState } from "react";
+'use client';
+
+import { useState, useEffect } from "react";
+import { useDbUser } from "@/hooks/useDbUser";
+import { getFriends } from "@/actions/friends";
+import toast from "react-hot-toast";
 
 interface SelectOpponentProps {
   onNext: () => void;
@@ -7,28 +12,46 @@ interface SelectOpponentProps {
   currentData: any;
 }
 
-// Mock friends data - this would come from your database
-const mockFriends = [
-  { id: "1", name: "Sarah Chen", avatar: "👩", status: "online", winRate: 78 },
-  { id: "2", name: "Mike Johnson", avatar: "👨", status: "online", winRate: 65 },
-  { id: "3", name: "Emily Davis", avatar: "👧", status: "offline", winRate: 82 },
-  { id: "4", name: "Alex Kumar", avatar: "🧑", status: "online", winRate: 71 },
-  { id: "5", name: "Jessica Lee", avatar: "👩‍🦰", status: "offline", winRate: 58 },
-];
+interface Friend {
+  id: string;
+  email: string;
+  displayName: string | null;
+  photoURL: string | null;
+}
 
 export default function SelectOpponent({ onNext, onBack, onUpdateData, currentData }: SelectOpponentProps) {
-  const [selectedOpponent, setSelectedOpponent] = useState<string | null>(
-    currentData.opponent?.id || null
+  const { dbUser, loading: dbUserLoading } = useDbUser();
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOpponent, setSelectedOpponent] = useState<Friend | null>(
+    currentData.opponent || null
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [privacy, setPrivacy] = useState(currentData.privacy || "public");
 
-  const filteredFriends = mockFriends.filter((friend) =>
-    friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    async function fetchFriends() {
+      if (!dbUser) return;
+      setLoading(true);
+      const result = await getFriends(dbUser.id);
+      if (result.success && result.data) {
+        setFriends(result.data);
+      } else {
+        toast.error(result.error || "Failed to load friends");
+      }
+      setLoading(false);
+    }
+    if (!dbUserLoading) {
+      fetchFriends();
+    }
+  }, [dbUser, dbUserLoading]);
+
+  const filteredFriends = friends.filter((friend) =>
+    (friend.displayName || friend.email).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleOpponentSelect = (friend: any) => {
-    setSelectedOpponent(friend.id);
+  const handleOpponentSelect = (friend: Friend) => {
+    setSelectedOpponent(friend);
     onUpdateData({ opponent: friend });
   };
 
@@ -42,6 +65,16 @@ export default function SelectOpponent({ onNext, onBack, onUpdateData, currentDa
 
   const isVersusChallenge = currentData.type === "versus";
   const isValid = !isVersusChallenge || selectedOpponent;
+
+  if (loading || dbUserLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center text-white/60">
+          Loading friends...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -99,40 +132,45 @@ export default function SelectOpponent({ onNext, onBack, onUpdateData, currentDa
           <label className="block text-sm font-medium text-white">Your Friends</label>
           <span className="text-xs text-white/40">{filteredFriends.length} available</span>
         </div>
-        <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg bg-surface p-4">
-          {filteredFriends.map((friend) => (
-            <button
-              key={friend.id}
-              onClick={() => handleOpponentSelect(friend)}
-              className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
-                selectedOpponent === friend.id
-                  ? "border-primary bg-primary/10"
-                  : "border-white/10 hover:border-white/20"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl">{friend.avatar}</div>
-                  <div>
-                    <div className="font-bold text-white">{friend.name}</div>
-                    <div className="flex items-center gap-2 text-xs text-white/60">
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          friend.status === "online" ? "bg-green-500" : "bg-white/20"
-                        }`}
-                      />
-                      {friend.status}
+        {filteredFriends.length === 0 ? (
+          <div className="rounded-lg bg-surface p-8 text-center">
+            <p className="text-white/60">
+              {friends.length === 0 
+                ? "No friends yet. Add some friends first!" 
+                : "No friends match your search."}
+            </p>
+          </div>
+        ) : (
+          <div className="max-h-80 space-y-2 overflow-y-auto rounded-lg bg-surface p-4">
+            {filteredFriends.map((friend) => (
+              <button
+                key={friend.id}
+                onClick={() => handleOpponentSelect(friend)}
+                className={`w-full rounded-lg border-2 p-4 text-left transition-all ${
+                  selectedOpponent?.id === friend.id
+                    ? "border-primary bg-primary/10"
+                    : "border-white/10 hover:border-white/20"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-lg font-bold text-primary">
+                      {friend.photoURL ? (
+                        <img src={friend.photoURL} alt={friend.displayName || friend.email} className="h-10 w-10 rounded-full" />
+                      ) : (
+                        (friend.displayName || friend.email).charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">{friend.displayName || friend.email}</div>
+                      <div className="text-xs text-white/60">{friend.email}</div>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-primary">{friend.winRate}%</div>
-                  <div className="text-xs text-white/40">Win Rate</div>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Skip Option for Solo */}

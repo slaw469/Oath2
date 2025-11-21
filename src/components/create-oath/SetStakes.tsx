@@ -12,6 +12,7 @@ const presetAmounts = [5, 10, 25, 50, 100, 250];
 export default function SetStakes({ onNext, onBack, onUpdateData, currentData }: SetStakesProps) {
   const [stake, setStake] = useState(currentData.stake || 0);
   const [customAmount, setCustomAmount] = useState("");
+  const [currencyType, setCurrencyType] = useState(currentData.currencyType || "GEMS");
 
   const handlePresetClick = (amount: number) => {
     setStake(amount);
@@ -31,7 +32,7 @@ export default function SetStakes({ onNext, onBack, onUpdateData, currentData }:
 
   const handleContinue = () => {
     if (stake > 0) {
-      onUpdateData({ stake });
+      onUpdateData({ stake, currencyType });
       onNext();
     }
   };
@@ -40,10 +41,41 @@ export default function SetStakes({ onNext, onBack, onUpdateData, currentData }:
 
   return (
     <div className="space-y-8">
+      {/* Currency Type Selection */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-white">Currency Type</label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setCurrencyType("GEMS")}
+            className={`rounded-lg border-2 p-4 text-left transition-all ${
+              currencyType === "GEMS"
+                ? "border-primary bg-primary/10"
+                : "border-white/10 bg-surface hover:border-white/20"
+            }`}
+          >
+            <div className="mb-2 text-3xl">💎</div>
+            <div className="font-bold text-white">Gems</div>
+            <div className="text-xs text-white/60">In-app currency (for testing)</div>
+          </button>
+          <button
+            onClick={() => setCurrencyType("REAL_MONEY")}
+            className={`rounded-lg border-2 p-4 text-left transition-all ${
+              currencyType === "REAL_MONEY"
+                ? "border-primary bg-primary/10"
+                : "border-white/10 bg-surface hover:border-white/20"
+            }`}
+          >
+            <div className="mb-2 text-3xl">💵</div>
+            <div className="font-bold text-white">Real Money</div>
+            <div className="text-xs text-white/60">Actual USD stakes</div>
+          </button>
+        </div>
+      </div>
+
       {/* Stakes Info Card */}
       <div className="rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/20 p-6">
-        <div className="mb-4 text-4xl">💰</div>
-        <h3 className="mb-2 text-xl font-bold text-white">Put Your Money Where Your Mouth Is</h3>
+        <div className="mb-4 text-4xl">{currencyType === "GEMS" ? "💎" : "💰"}</div>
+        <h3 className="mb-2 text-xl font-bold text-white">Put Your {currencyType === "GEMS" ? "Gems" : "Money"} Where Your Mouth Is</h3>
         <p className="text-sm text-white/80">
           The stake is what you're willing to risk to prove your commitment. If you succeed, you keep it.
           If you fail, you lose it to your opponent or charity.
@@ -54,7 +86,7 @@ export default function SetStakes({ onNext, onBack, onUpdateData, currentData }:
       <div className="text-center">
         <p className="mb-2 text-sm text-white/60">Your Stake</p>
         <div className="text-6xl font-bold text-primary">
-          ${stake > 0 ? stake.toFixed(2) : "0.00"}
+          {currencyType === "GEMS" ? "💎 " : "$"}{stake > 0 ? (currencyType === "GEMS" ? stake.toLocaleString() : stake.toFixed(2)) : (currencyType === "GEMS" ? "0" : "0.00")}
         </div>
       </div>
 
@@ -72,7 +104,7 @@ export default function SetStakes({ onNext, onBack, onUpdateData, currentData }:
                   : "border-white/10 bg-surface text-white hover:border-white/20"
               }`}
             >
-              ${amount}
+              {currencyType === "GEMS" ? `💎 ${amount}` : `$${amount}`}
             </button>
           ))}
         </div>
@@ -82,7 +114,7 @@ export default function SetStakes({ onNext, onBack, onUpdateData, currentData }:
       <div className="space-y-2">
         <label className="block text-sm font-medium text-white">Custom Amount</label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-white/60">$</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl text-white/60">{currencyType === "GEMS" ? "💎" : "$"}</span>
           <input
             type="number"
             value={customAmount}

@@ -3,6 +3,8 @@ import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import { AuthProvider } from "@/contexts/AuthContext";
+import DbUserSync from "@/components/DbUserSync";
+import { Toaster } from 'react-hot-toast';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -31,8 +33,11 @@ export default function RootLayout({
         className={`${spaceGrotesk.className} bg-background-light dark:bg-background-dark font-display`}
       >
         <AuthProvider>
-          <Header />
-          {children}
+          <DbUserSync>
+            <Toaster position="top-right" />
+            <Header />
+            {children}
+          </DbUserSync>
         </AuthProvider>
       </body>
     </html>

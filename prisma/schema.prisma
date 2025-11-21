@@ -1,0 +1,302 @@
+// Oath Platform - Comprehensive Database Schema
+// PvP Accountability Platform with Oaths, Stakes, and AI Verification
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// USER MODELS
+// ============================================================================
+
+model User {
+  id            String   @id @default(cuid())
+  firebaseUid   String   @unique // Firebase Auth UID
+  email         String   @unique
+  displayName   String?
+  photoURL      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Internal credits (v1 stakes currency)
+  credits       Int      @default(1000) // Starting balance
+  
+  // In-app currency (Gems) - for testing and non-real-money stakes
+  gems          Int      @default(10000) // Starting gems balance
+  
+  // Relationships
+  oathsParticipating  OathParticipant[]
+  checkIns            CheckIn[]
+  disputes            Dispute[]
+  notificationsSent   Notification[] @relation("NotificationSender")
+  notificationsReceived Notification[] @relation("NotificationReceiver")
+  
+  // Friendships - both directions
+  friendshipsInitiated Friendship[] @relation("FriendshipInitiator")
+  friendshipsReceived  Friendship[] @relation("FriendshipReceiver")
+  
+  @@index([firebaseUid])
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================================================
+// FRIENDSHIP MODELS
+// ============================================================================
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+model Friendship {
+  id          String           @id @default(cuid())
+  initiatorId String
+  receiverId  String
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  initiator   User @relation("FriendshipInitiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  receiver    User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@unique([initiatorId, receiverId])
+  @@index([initiatorId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("friendships")
+}
+
+// ============================================================================
+// OATH MODELS
+// ============================================================================
+
+enum OathStatus {
+  DRAFT         // Being created
+  PENDING       // Waiting for participants to accept
+  ACTIVE        // Currently running
+  COMPLETED     // Finished normally
+  CANCELLED     // Cancelled before completion
+}
+
+enum OathType {
+  DAILY         // Daily check-ins
+  WEEKLY        // Weekly check-ins
+  CUSTOM        // Custom schedule
+}
+
+enum CurrencyType {
+  REAL_MONEY    // Actual USD stakes
+  GEMS          // In-app currency for testing
+}
+
+model Oath {
+  id              String      @id @default(cuid())
+  title           String
+  description     String
+  type            OathType
+  status          OathStatus  @default(DRAFT)
+  
+  // Duration
+  startDate       DateTime
+  endDate         DateTime
+  
+  // Stakes (same for all participants in v1)
+  stakeAmount     Int
+  currencyType    CurrencyType @default(GEMS) // What currency is being staked
+  
+  // AI Verification settings
+  verificationPrompt String    // Instructions for AI to verify proof
+  
+  // Metadata
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relationships
+  participants    OathParticipant[]
+  checkIns        CheckIn[]
+  
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@map("oaths")
+}
+
+// ============================================================================
+// OATH PARTICIPANT MODELS
+// ============================================================================
+
+enum ParticipantStatus {
+  INVITED       // Invited but not accepted
+  ACCEPTED      // Accepted and participating
+  DECLINED      // Declined invitation
+  FORFEITED     // Gave up mid-oath
+}
+
+model OathParticipant {
+  id              String            @id @default(cuid())
+  oathId          String
+  userId          String
+  status          ParticipantStatus @default(INVITED)
+  
+  // Stake tracking
+  stakeAmount     Int               // Amount this participant staked
+  stakePaid       Boolean           @default(false) // Whether they paid their stake
+  
+  // Performance tracking
+  successCount    Int               @default(0)    // Days successfully completed
+  failureCount    Int               @default(0)    // Days failed
+  disputesWon     Int               @default(0)
+  disputesLost    Int               @default(0)
+  
+  // Timestamps
+  joinedAt        DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  // Relationships
+  oath            Oath              @relation(fields: [oathId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([oathId, userId])
+  @@index([oathId])
+  @@index([userId])
+  @@index([status])
+  @@map("oath_participants")
+}
+
+// ============================================================================
+// CHECK-IN MODELS
+// ============================================================================
+
+enum CheckInStatus {
+  PENDING_SUBMISSION  // Waiting for user to submit
+  PENDING_VERIFICATION // Submitted, waiting for AI
+  VERIFIED_COMPLETE   // AI verified as complete
+  VERIFIED_INCOMPLETE // AI verified as incomplete
+  DISPUTED            // User contested AI decision
+  RESOLVED_COMPLETE   // Dispute resolved as complete
+  RESOLVED_INCOMPLETE // Dispute resolved as incomplete
+}
+
+model CheckIn {
+  id              String         @id @default(cuid())
+  oathId          String
+  userId          String
+  
+  // Check-in details
+  dueDate         DateTime       // The day this check-in is for
+  submittedAt     DateTime?      // When proof was submitted
+  proofUrl        String?        // Link to proof (e.g., LeetCode solution)
+  proofText       String?        // Text description of proof
+  proofImageUrl   String?        // Screenshot upload URL
+  
+  // Verification
+  status          CheckInStatus  @default(PENDING_SUBMISSION)
+  aiVerificationResult String?   // AI's reasoning
+  aiVerifiedAt    DateTime?
+  
+  // Metadata
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Relationships
+  oath            Oath           @relation(fields: [oathId], references: [id], onDelete: Cascade)
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dispute         Dispute?
+  
+  @@unique([oathId, userId, dueDate])
+  @@index([oathId])
+  @@index([userId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("check_ins")
+}
+
+// ============================================================================
+// DISPUTE MODELS
+// ============================================================================
+
+enum DisputeStatus {
+  PENDING         // Waiting for rival to judge
+  RESOLVED        // Rival has made decision
+  EXPIRED         // Rival didn't respond in time
+}
+
+enum DisputeOutcome {
+  COMPLETE        // Rival agrees user completed
+  INCOMPLETE      // Rival agrees with AI
+}
+
+model Dispute {
+  id              String          @id @default(cuid())
+  checkInId       String          @unique
+  disputerId      String          // User who disputed
+  judgerId        String?         // Rival who will judge (could be null if multiple rivals)
+  
+  // Dispute details
+  reason          String          // Why user thinks AI was wrong
+  status          DisputeStatus   @default(PENDING)
+  outcome         DisputeOutcome?
+  judgeNotes      String?         // Rival's explanation
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  resolvedAt      DateTime?
+  updatedAt       DateTime        @updatedAt
+  
+  // Relationships
+  checkIn         CheckIn         @relation(fields: [checkInId], references: [id], onDelete: Cascade)
+  disputer        User            @relation(fields: [disputerId], references: [id], onDelete: Cascade)
+  
+  @@index([disputerId])
+  @@index([judgerId])
+  @@index([status])
+  @@map("disputes")
+}
+
+// ============================================================================
+// NOTIFICATION MODELS
+// ============================================================================
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_ACCEPTED
+  OATH_INVITE
+  OATH_ACCEPTED
+  OATH_STARTING_SOON
+  CHECKIN_REMINDER
+  CHECKIN_MISSED
+  DISPUTE_RAISED
+  DISPUTE_REQUIRES_JUDGMENT
+  DISPUTE_RESOLVED
+  OATH_COMPLETED
+  STAKE_SETTLED
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  type        NotificationType
+  senderId    String?          // Who triggered this (nullable for system notifications)
+  receiverId  String
+  
+  title       String
+  message     String
+  actionUrl   String?          // Link to relevant page
+  
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  
+  // Relationships
+  sender      User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  receiver    User             @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([receiverId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}

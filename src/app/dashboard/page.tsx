@@ -2,6 +2,8 @@ import TodaysOaths from "@/components/TodaysOaths";
 import TodayAtAGlance from "@/components/TodayAtAGlance";
 import UpcomingDeadlines from "@/components/UpcomingDeadlines";
 import AllActiveOaths from "@/components/AllActiveOaths";
+import OathInvitations from "@/components/OathInvitations";
+import PendingOaths from "@/components/PendingOaths";
 import Link from "next/link";
 
 export default function Dashboard() {
@@ -29,11 +31,13 @@ export default function Dashboard() {
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-6">
+              <OathInvitations />
               <TodaysOaths />
               <AllActiveOaths />
             </div>
             <div className="space-y-6">
               <TodayAtAGlance />
+              <PendingOaths />
               <UpcomingDeadlines />
             </div>
           </div>

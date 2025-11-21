@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { logOut } from '@/lib/auth';
+import { useDbUser } from '@/hooks/useDbUser';
 
 const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+  const { dbUser } = useDbUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -77,9 +79,11 @@ const Header = () => {
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary">
-            <span className="truncate">Balance: $120</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary">
+              <span className="truncate">💎 {dbUser?.gems?.toLocaleString() || '0'}</span>
+            </button>
+          </div>
           <button className="relative flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 min-w-0 w-10 bg-surface text-white/80 transition-colors hover:text-white">
             <span className="material-symbols-outlined">notifications</span>
             <div className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-background-dark bg-danger"></div>

@@ -2,11 +2,24 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useDbUser } from '@/hooks/useDbUser';
+import { addFriendByEmail } from '@/actions/friends';
+import toast from 'react-hot-toast';
+import FriendsStats from '@/components/FriendsStats';
+import TopRivals from '@/components/TopRivals';
+import AllFriends from '@/components/AllFriends';
+import PendingRequests from '@/components/PendingRequests';
+import SuggestedConnections from '@/components/SuggestedConnections';
 
 export default function FriendsPage() {
   const { user, loading } = useAuth();
+  const { dbUser } = useDbUser();
   const router = useRouter();
+  const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  const [friendEmail, setFriendEmail] = useState('');
+  const [addingFriend, setAddingFriend] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,6 +38,24 @@ export default function FriendsPage() {
     );
   }
 
+  const handleAddFriend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dbUser || !friendEmail) return;
+
+    setAddingFriend(true);
+    const result = await addFriendByEmail(dbUser.id, friendEmail);
+    setAddingFriend(false);
+
+    if (result.success) {
+      toast.success('Friend request sent!');
+      setFriendEmail('');
+      setShowAddFriendModal(false);
+      setRefreshKey(prev => prev + 1); // Trigger refresh
+    } else {
+      toast.error(result.error || 'Failed to send request');
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -32,25 +63,103 @@ export default function FriendsPage() {
   return (
     <div className="min-h-screen bg-background-dark">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">
-            <span className="text-primary">Friends</span> & Connections
-          </h1>
-          <p className="mt-2 text-lg text-white/60">
-            Connect with friends and compete together
-          </p>
+        {/* Header Section */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white">
+              Friends & Rivals
+            </h1>
+            <p className="mt-2 text-lg text-white/60">
+              See your circle, your record, and who to challenge next.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search friends..."
+                className="h-11 w-64 rounded-full border border-white/10 bg-surface pl-10 pr-4 text-sm text-white placeholder:text-white/40 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-xl text-white/40">
+                search
+              </span>
+            </div>
+            <button 
+              onClick={() => setShowAddFriendModal(true)}
+              className="h-11 rounded-full bg-primary px-6 text-sm font-bold text-background-dark transition-opacity hover:opacity-90"
+            >
+              Add friend
+            </button>
+          </div>
         </div>
 
-        <div className="rounded-lg bg-surface border border-white/10 p-12 text-center">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/20">
-            <span className="material-symbols-outlined text-5xl text-primary">group</span>
+        {/* Stats Section */}
+        <FriendsStats />
+
+        {/* Main Content - Two Column Layout */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Left Column - Takes 2/3 width */}
+          <div className="flex flex-col gap-8 lg:col-span-2">
+            <TopRivals />
+            <AllFriends key={refreshKey} />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
-          <p className="text-white/60 max-w-md mx-auto">
-            Manage your friends, send challenges, and compete on leaderboards.
-          </p>
+
+          {/* Right Column - Takes 1/3 width */}
+          <div className="flex flex-col gap-6 lg:col-span-1">
+            <PendingRequests key={refreshKey} onUpdate={() => setRefreshKey(prev => prev + 1)} />
+            <SuggestedConnections />
+          </div>
         </div>
       </main>
+
+      {/* Add Friend Modal */}
+      {showAddFriendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-lg border border-white/10 bg-surface p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Add Friend</h2>
+              <button
+                onClick={() => setShowAddFriendModal(false)}
+                className="text-white/60 hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleAddFriend}>
+              <div className="mb-4">
+                <label className="mb-2 block text-sm font-medium text-white/80">
+                  Friend's Email
+                </label>
+                <input
+                  type="email"
+                  value={friendEmail}
+                  onChange={(e) => setFriendEmail(e.target.value)}
+                  placeholder="friend@example.com"
+                  className="w-full rounded-lg border border-white/10 bg-background-dark px-4 py-3 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddFriendModal(false)}
+                  className="flex-1 rounded-full border border-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingFriend}
+                  className="flex-1 rounded-full bg-primary px-4 py-3 text-sm font-bold text-background-dark transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {addingFriend ? 'Sending...' : 'Send Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

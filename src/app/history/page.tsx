@@ -3,6 +3,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import HistoryStats from '@/components/HistoryStats';
+import HistoryContent from '@/components/HistoryContent';
 
 export default function HistoryPage() {
   const { user, loading } = useAuth();
@@ -33,23 +35,14 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-background-dark">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white">
-            Your <span className="text-primary">History</span>
-          </h1>
+          <h1 className="text-4xl font-bold text-white">History</h1>
           <p className="mt-2 text-lg text-white/60">
-            Review your completed oaths and achievements
+            Your wins, losses, and Oaths so far.
           </p>
         </div>
 
-        <div className="rounded-lg bg-surface border border-white/10 p-12 text-center">
-          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/20">
-            <span className="material-symbols-outlined text-5xl text-primary">history</span>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
-          <p className="text-white/60 max-w-md mx-auto">
-            View your complete oath history, track your progress over time, and celebrate your wins.
-          </p>
-        </div>
+        <HistoryStats />
+        <HistoryContent />
       </main>
     </div>
   );
