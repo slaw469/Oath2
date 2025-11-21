@@ -4,6 +4,7 @@ import ActiveBattles from "@/components/ActiveBattles";
 import TrendingChallenges from "@/components/TrendingChallenges";
 import RandomOathGenerator from "@/components/RandomOathGenerator";
 import StaffPicks from "@/components/StaffPicks";
+import Link from "next/link";
 
 export default function ArenaPage() {
   return (
@@ -25,12 +26,12 @@ export default function ArenaPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-white/10 text-sm font-medium text-white/80 transition-colors hover:bg-white/20">
+                <Link href="/create-oath?type=versus" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-white/10 text-sm font-medium text-white/80 transition-colors hover:bg-white/20">
                   <span className="truncate">Challenge a friend</span>
-                </button>
-                <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-6 bg-primary text-background-dark text-base font-bold leading-normal transition-opacity hover:opacity-90">
+                </Link>
+                <Link href="/create-oath" className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-6 bg-primary text-background-dark text-base font-bold leading-normal transition-opacity hover:opacity-90">
                   <span className="truncate">Start New Oath</span>
-                </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,45 +1,56 @@
-import Footer from "@/components/Footer";
-import HistoryStats from "@/components/HistoryStats";
-import HistoryContent from "@/components/HistoryContent";
+'use client';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function HistoryPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background-dark">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-white/60">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col">
-      <main className="flex flex-1 justify-center p-4 sm:p-8">
-        <div className="w-full max-w-7xl">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="text-3xl font-bold leading-tight tracking-tight text-white">History</p>
-              <p className="text-sm font-normal leading-normal text-white/60">
-                Your wins, losses, and Oaths so far.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center rounded-full bg-surface p-1 text-sm text-white/80">
-                <button className="rounded-full px-3 py-1 text-xs font-medium text-white/60 hover:bg-white/10">
-                  Last 7 days
-                </button>
-                <button className="rounded-full px-3 py-1 text-xs font-medium text-white/60 hover:bg-white/10">
-                  Last 30 days
-                </button>
-                <button className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">
-                  All time
-                </button>
-                <button className="rounded-full p-1.5 hover:bg-white/10">
-                  <span className="material-symbols-outlined text-base">calendar_today</span>
-                </button>
-              </div>
-              <button className="flex h-9 items-center gap-2 rounded-full bg-surface px-4 text-sm font-medium text-white/80 transition-colors hover:bg-white/20">
-                <span>All results</span>
-                <span className="material-symbols-outlined text-base">expand_more</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-background-dark">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white">
+            Your <span className="text-primary">History</span>
+          </h1>
+          <p className="mt-2 text-lg text-white/60">
+            Review your completed oaths and achievements
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-surface border border-white/10 p-12 text-center">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/20">
+            <span className="material-symbols-outlined text-5xl text-primary">history</span>
           </div>
-          <HistoryStats />
-          <HistoryContent />
+          <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
+          <p className="text-white/60 max-w-md mx-auto">
+            View your complete oath history, track your progress over time, and celebrate your wins.
+          </p>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

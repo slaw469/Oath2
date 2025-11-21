@@ -1,56 +1,56 @@
-import Footer from "@/components/Footer";
-import FriendsStats from "@/components/FriendsStats";
-import TopRivals from "@/components/TopRivals";
-import AllFriends from "@/components/AllFriends";
-import PendingRequests from "@/components/PendingRequests";
-import SuggestedConnections from "@/components/SuggestedConnections";
+'use client';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function FriendsPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background-dark">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-white/60">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="relative flex min-h-screen w-full flex-col">
-      <main className="flex flex-1 justify-center p-4 sm:p-8">
-        <div className="w-full max-w-7xl">
-          <div className="mb-6 rounded-lg bg-surface/50 p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold leading-tight tracking-tight text-white">
-                  Friends & Rivals
-                </h1>
-                <p className="text-sm font-normal leading-normal text-white/60">
-                  See your circle, your record, and who to challenge next.
-                </p>
-              </div>
-              <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/50">
-                    search
-                  </span>
-                  <input
-                    className="h-10 w-full rounded-full border-none bg-background-dark/50 pl-10 pr-4 text-sm text-white/80 placeholder-white/50 focus:ring-2 focus:ring-primary/50"
-                    placeholder="Search friends..."
-                    type="search"
-                  />
-                </div>
-                <button className="flex h-10 w-full min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary px-6 text-sm font-bold leading-normal text-background-dark transition-opacity hover:opacity-90 sm:w-auto">
-                  <span className="truncate">Add friend</span>
-                </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-background-dark">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white">
+            <span className="text-primary">Friends</span> & Connections
+          </h1>
+          <p className="mt-2 text-lg text-white/60">
+            Connect with friends and compete together
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-surface border border-white/10 p-12 text-center">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-primary/20">
+            <span className="material-symbols-outlined text-5xl text-primary">group</span>
           </div>
-          <FriendsStats />
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="flex flex-col gap-8 lg:col-span-2">
-              <TopRivals />
-              <AllFriends />
-            </div>
-            <div className="flex flex-col gap-8">
-              <PendingRequests />
-              <SuggestedConnections />
-            </div>
-          </div>
+          <h2 className="text-2xl font-bold text-white mb-4">Coming Soon</h2>
+          <p className="text-white/60 max-w-md mx-auto">
+            Manage your friends, send challenges, and compete on leaderboards.
+          </p>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

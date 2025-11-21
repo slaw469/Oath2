@@ -2,6 +2,7 @@ import TodaysOaths from "@/components/TodaysOaths";
 import TodayAtAGlance from "@/components/TodayAtAGlance";
 import UpcomingDeadlines from "@/components/UpcomingDeadlines";
 import AllActiveOaths from "@/components/AllActiveOaths";
+import Link from "next/link";
 
 export default function Dashboard() {
   return (
@@ -20,9 +21,9 @@ export default function Dashboard() {
                 </svg>
                 <span>Tues, November 18</span>
               </div>
-              <button className="rounded-full bg-primary px-6 py-3 text-sm font-bold text-black transition-all hover:bg-primary/90">
+              <Link href="/create-oath" className="rounded-full bg-primary px-6 py-3 text-sm font-bold text-black transition-all hover:bg-primary/90">
                 Start New Oath
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -41,4 +42,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

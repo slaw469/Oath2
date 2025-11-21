@@ -28,7 +28,7 @@ const Hero = () => {
           automatially win or lose based your commintments.
         </p>
         <Link 
-          href="/dashboard"
+          href="/auth/signup"
           className="mt-8 inline-block rounded-full bg-yellow-400 px-12 py-4 text-lg font-bold text-black shadow-lg shadow-yellow-400/50 transition-all hover:bg-yellow-500"
         >
           START YOUR FIRST OATH
