@@ -21,6 +21,98 @@ export interface SubmitCheckInInput {
   proofImageUrl?: string;
 }
 
+export interface CreateCheckInInput {
+  oathId: string;
+  userId: string;
+  proofUrl: string;
+  notes?: string;
+}
+
+/**
+ * Create a new check-in with proof (simplified for upload modal)
+ */
+export async function createCheckIn(input: CreateCheckInInput): Promise<ActionResult> {
+  try {
+    // Validate that user is a participant in the oath
+    const participant = await prisma.oathParticipant.findUnique({
+      where: {
+        oathId_userId: {
+          oathId: input.oathId,
+          userId: input.userId,
+        },
+      },
+      include: {
+        oath: true,
+      },
+    });
+
+    if (!participant || participant.status !== 'ACCEPTED') {
+      return {
+        success: false,
+        error: 'You are not a participant in this oath',
+      };
+    }
+
+    // Check if oath is active
+    if (participant.oath.status !== 'ACTIVE') {
+      return {
+        success: false,
+        error: 'This oath is not currently active',
+      };
+    }
+
+    // Create check-in with today's date as due date
+    const now = new Date();
+    const checkIn = await prisma.checkIn.create({
+      data: {
+        oathId: input.oathId,
+        userId: input.userId,
+        dueDate: now,
+        proofUrl: input.proofUrl,
+        proofText: input.notes,
+        submittedAt: now,
+        status: 'PENDING_VERIFICATION',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            email: true,
+            photoURL: true,
+          },
+        },
+      },
+    });
+
+    // Increment success count for participant
+    await prisma.oathParticipant.update({
+      where: {
+        oathId_userId: {
+          oathId: input.oathId,
+          userId: input.userId,
+        },
+      },
+      data: {
+        successCount: {
+          increment: 1,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      data: checkIn,
+    };
+  } catch (error) {
+    console.error('Error creating check-in:', error);
+    return {
+      success: false,
+      error: 'Failed to create check-in',
+    };
+  }
+}
+
 /**
  * Submit proof for a check-in
  */

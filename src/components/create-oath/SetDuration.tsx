@@ -7,6 +7,11 @@ interface SetDurationProps {
   currentData: any;
 }
 
+const recurringOptions = [
+  { id: "daily", label: "Daily Recurring", type: "DAILY", icon: "⚡", description: "Check in every day until someone fails" },
+  { id: "weekly", label: "Weekly Recurring", type: "WEEKLY", icon: "📅", description: "Check in every week until someone fails" },
+];
+
 const presetDurations = [
   { id: "1day", label: "1 Day", days: 1, icon: "⚡" },
   { id: "3days", label: "3 Days", days: 3, icon: "🔥" },
@@ -20,9 +25,21 @@ export default function SetDuration({ onNext, onBack, onUpdateData, currentData 
   const [selectedDuration, setSelectedDuration] = useState(currentData.duration || "");
   const [endDate, setEndDate] = useState(currentData.endDate || "");
   const [customDate, setCustomDate] = useState(false);
+  const [oathType, setOathType] = useState(currentData.oathType || "CUSTOM");
+
+  const handleRecurringSelect = (id: string, type: string) => {
+    setSelectedDuration(id);
+    setOathType(type);
+    setCustomDate(false);
+    // Set end date to 1 year from now for recurring oaths
+    const date = new Date();
+    date.setFullYear(date.getFullYear() + 1);
+    setEndDate(date.toISOString().split("T")[0]);
+  };
 
   const handleDurationSelect = (duration: string, days: number) => {
     setSelectedDuration(duration);
+    setOathType("CUSTOM");
     setCustomDate(false);
     // Calculate end date
     const date = new Date();
@@ -33,12 +50,13 @@ export default function SetDuration({ onNext, onBack, onUpdateData, currentData 
   const handleCustomDateChange = (date: string) => {
     setEndDate(date);
     setSelectedDuration("custom");
+    setOathType("CUSTOM");
     setCustomDate(true);
   };
 
   const handleContinue = () => {
     if (selectedDuration && endDate) {
-      onUpdateData({ duration: selectedDuration, endDate });
+      onUpdateData({ duration: selectedDuration, endDate, oathType });
       onNext();
     }
   };
@@ -75,9 +93,32 @@ export default function SetDuration({ onNext, onBack, onUpdateData, currentData 
         </p>
       </div>
 
+      {/* Recurring Options */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-white">Recurring Oaths</label>
+        <p className="text-xs text-white/60 mb-3">Continues until someone fails to submit proof</p>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {recurringOptions.map((option) => (
+            <button
+              key={option.id}
+              onClick={() => handleRecurringSelect(option.id, option.type)}
+              className={`group rounded-lg border-2 p-4 text-left transition-all ${
+                selectedDuration === option.id && !customDate
+                  ? "border-primary bg-primary/10"
+                  : "border-white/10 bg-surface hover:border-white/20"
+              }`}
+            >
+              <div className="mb-2 text-2xl">{option.icon}</div>
+              <div className="font-bold text-white">{option.label}</div>
+              <div className="text-xs text-white/60">{option.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Preset Durations */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-white">Quick Select</label>
+        <label className="block text-sm font-medium text-white">One-Time Duration</label>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           {presetDurations.map((duration) => (
             <button

@@ -75,7 +75,7 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
           title: oathData.title,
           description: oathData.description,
           category: oathData.category,
-          type: 'DAILY', // Default to DAILY for now
+          type: oathData.oathType || 'CUSTOM', // Use selected oath type
           startDate: new Date(),
           endDate: new Date(oathData.endDate),
           stakeAmount: oathData.stake,
@@ -90,12 +90,12 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
           return;
         }
 
-        const verificationPrompt = `Verify that the user completed their daily commitment for: ${oathData.title}. ${oathData.description}`;
+        const verificationPrompt = `Verify that the user completed their commitment for: ${oathData.title}. ${oathData.description}`;
 
         result = await createOath(dbUser.id, {
           title: oathData.title,
           description: oathData.description,
-          type: 'DAILY',
+          type: oathData.oathType || 'CUSTOM', // Use selected oath type
           startDate: new Date(),
           endDate: new Date(oathData.endDate),
           stakeAmount: oathData.stake,
