@@ -5,7 +5,7 @@
 
 import prisma from '@/lib/prisma';
 import { FriendshipStatus } from '@prisma/client';
-import { getUserByEmail } from '@/lib/db-helpers';
+import { getUserByEmail, getUserByFriendCode } from '@/lib/db-helpers';
 
 export interface ActionResult<T = any> {
   success: boolean;
@@ -130,6 +130,128 @@ export async function addFriendByEmail(
     };
   } catch (error) {
     console.error('Error adding friend:', error);
+    return {
+      success: false,
+      error: 'Failed to send friend request. Please try again.',
+    };
+  }
+}
+
+/**
+ * Add a friend by unique friend code
+ * Creates a PENDING friendship request
+ */
+export async function addFriendByCode(
+  currentUserId: string,
+  friendCode: string
+): Promise<ActionResult> {
+  try {
+    // Validate inputs
+    if (!currentUserId || !friendCode) {
+      return {
+        success: false,
+        error: 'User ID and friend code are required',
+      };
+    }
+
+    const normalizedCode = friendCode.trim().toUpperCase();
+
+    // Get current user
+    const currentUser = await prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
+
+    if (!currentUser) {
+      return {
+        success: false,
+        error: 'Current user not found',
+      };
+    }
+
+    // Find the user by friend code
+    const friendUser = await getUserByFriendCode(normalizedCode);
+
+    if (!friendUser) {
+      return {
+        success: false,
+        error: 'User not found. Please check the friend code.',
+      };
+    }
+
+    // Prevent adding self
+    if (friendUser.id === currentUserId) {
+      return {
+        success: false,
+        error: 'You cannot add yourself as a friend',
+      };
+    }
+
+    // Check if friendship already exists (in either direction)
+    const existingFriendship = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { initiatorId: currentUserId, receiverId: friendUser.id },
+          { initiatorId: friendUser.id, receiverId: currentUserId },
+        ],
+      },
+    });
+
+    if (existingFriendship) {
+      if (existingFriendship.status === 'ACCEPTED') {
+        return {
+          success: false,
+          error: 'You are already friends with this user',
+        };
+      } else if (existingFriendship.status === 'PENDING') {
+        return {
+          success: false,
+          error: 'A friend request is already pending with this user',
+        };
+      } else if (existingFriendship.status === 'BLOCKED') {
+        return {
+          success: false,
+          error: 'Unable to send friend request to this user',
+        };
+      }
+    }
+
+    // Create the friendship request
+    const friendship = await prisma.friendship.create({
+      data: {
+        initiatorId: currentUserId,
+        receiverId: friendUser.id,
+        status: 'PENDING',
+      },
+      include: {
+        receiver: {
+          select: {
+            id: true,
+            displayName: true,
+            email: true,
+            photoURL: true,
+          },
+        },
+      },
+    });
+
+    // Create notification for the receiver
+    await prisma.notification.create({
+      data: {
+        type: 'FRIEND_REQUEST',
+        senderId: currentUserId,
+        receiverId: friendUser.id,
+        title: 'New Friend Request',
+        message: `${currentUser.displayName || currentUser.email} sent you a friend request`,
+        actionUrl: '/friends',
+      },
+    });
+
+    return {
+      success: true,
+      data: friendship,
+    };
+  } catch (error) {
+    console.error('Error adding friend by code:', error);
     return {
       success: false,
       error: 'Failed to send friend request. Please try again.',

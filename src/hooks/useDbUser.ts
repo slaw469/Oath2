@@ -13,6 +13,8 @@ export interface DbUser {
   email: string;
   displayName: string | null;
   photoURL: string | null;
+  friendCode?: string | null;
+  leetcodeUsername?: string | null;
   credits: number;
   gems: number;
   createdAt: Date;

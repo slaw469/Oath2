@@ -28,6 +28,139 @@ export interface CreateCheckInInput {
   notes?: string;
 }
 
+// Helper for settlement
+const DAILY_COMPLETE_STATUSES = [
+  'VERIFIED_COMPLETE',
+  'RESOLVED_COMPLETE',
+] as const;
+
+/**
+ * Daily settlement for Daily LeetCode versus oaths.
+ * For each ACTIVE DAILY LeetCode oath:
+ * - If exactly one participant misses the day (no complete check-in), that participant loses.
+ * - Winners receive a reward based on stakeAmount and currencyType.
+ * - Oath is marked COMPLETED after settlement.
+ *
+ * NOTE: This does not run automatically; you should call it from a scheduled job (e.g. API route + cron).
+ */
+export async function settleDailyLeetCodeOathsForDate(date: Date): Promise<ActionResult> {
+  try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    // Find all ACTIVE Daily LeetCode-style oaths (inferred from type === DAILY)
+    const oaths = await prisma.oath.findMany({
+      where: {
+        type: 'DAILY',
+        status: 'ACTIVE',
+      },
+      include: {
+        participants: true,
+      },
+    });
+
+    let settledCount = 0;
+
+    for (const oath of oaths) {
+      const participants = oath.participants.filter((p) => p.status === 'ACCEPTED');
+      if (participants.length < 2) continue;
+
+      // For each participant, check if they have a completed check-in for that day
+      const participantStatus = await Promise.all(
+        participants.map(async (p) => {
+          const checkIn = await prisma.checkIn.findFirst({
+            where: {
+              oathId: oath.id,
+              userId: p.userId,
+              dueDate: {
+                gte: startOfDay,
+                lt: endOfDay,
+              },
+              status: {
+                in: DAILY_COMPLETE_STATUSES as any,
+              },
+            },
+          });
+
+          return {
+            participant: p,
+            completed: !!checkIn,
+          };
+        }),
+      );
+
+      const winners = participantStatus.filter((s) => s.completed).map((s) => s.participant);
+      const losers = participantStatus.filter((s) => !s.completed).map((s) => s.participant);
+
+      // Only settle when exactly one side missed (at least one winner and at least one loser)
+      if (winners.length === 0 || losers.length === 0) {
+        continue;
+      }
+
+      const pool = oath.stakeAmount * participants.length;
+      const rewardPerWinner = Math.floor(pool / winners.length);
+
+      // Credit winners
+      for (const winner of winners) {
+        if (oath.currencyType === 'GEMS') {
+          await prisma.user.update({
+            where: { id: winner.userId },
+            data: {
+              gems: {
+                increment: rewardPerWinner,
+              },
+            },
+          });
+        } else {
+          await prisma.user.update({
+            where: { id: winner.userId },
+            data: {
+              credits: {
+                increment: rewardPerWinner,
+              },
+            },
+          });
+        }
+      }
+
+      // Increment failureCount for losers who missed entirely
+      for (const loser of losers) {
+        await prisma.oathParticipant.update({
+          where: { id: loser.id },
+          data: {
+            failureCount: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      // Mark oath as completed after settlement
+      await prisma.oath.update({
+        where: { id: oath.id },
+        data: {
+          status: 'COMPLETED',
+        },
+      });
+
+      settledCount += 1;
+    }
+
+    return {
+      success: true,
+      data: { settledCount },
+    };
+  } catch (error) {
+    console.error('Error settling Daily LeetCode oaths:', error);
+    return {
+      success: false,
+      error: 'Failed to settle Daily LeetCode oaths',
+    };
+  }
+}
+
 /**
  * Create a new check-in with proof (simplified for upload modal)
  */

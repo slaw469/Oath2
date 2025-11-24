@@ -4,6 +4,16 @@
 import { User as FirebaseUser } from 'firebase/auth';
 import prisma from './prisma';
 
+// Generate a human-friendly friend code (e.g., 8 chars, no confusing letters)
+function generateFriendCode(length = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 /**
  * Get or create a user in the database from Firebase auth
  * This should be called after authentication to ensure the user exists in DB
@@ -13,38 +23,24 @@ export async function getOrCreateUserFromFirebase(firebaseUser: FirebaseUser) {
     throw new Error('Firebase user is required');
   }
 
-  // Try to find existing user by Firebase UID
-  let user = await prisma.user.findUnique({
+  // Use an upsert to avoid race conditions on the unique firebaseUid constraint
+  const user = await prisma.user.upsert({
     where: { firebaseUid: firebaseUser.uid },
+    create: {
+      firebaseUid: firebaseUser.uid,
+      email: firebaseUser.email!,
+      displayName: firebaseUser.displayName,
+      photoURL: firebaseUser.photoURL,
+      friendCode: generateFriendCode(),
+      // credits and gems default to 0 via schema defaults
+    },
+    update: {
+      // Only update fields when Firebase has a value; undefined fields are ignored by Prisma
+      email: firebaseUser.email || undefined,
+      displayName: firebaseUser.displayName || undefined,
+      photoURL: firebaseUser.photoURL || undefined,
+    },
   });
-
-  // If user doesn't exist, create them
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        firebaseUid: firebaseUser.uid,
-        email: firebaseUser.email!,
-        displayName: firebaseUser.displayName,
-        photoURL: firebaseUser.photoURL,
-      },
-    });
-  } else {
-    // Update user info if it changed
-    const updates: any = {};
-    if (firebaseUser.displayName && firebaseUser.displayName !== user.displayName) {
-      updates.displayName = firebaseUser.displayName;
-    }
-    if (firebaseUser.photoURL && firebaseUser.photoURL !== user.photoURL) {
-      updates.photoURL = firebaseUser.photoURL;
-    }
-    
-    if (Object.keys(updates).length > 0) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: updates,
-      });
-    }
-  }
 
   return user;
 }
@@ -64,6 +60,15 @@ export async function getUserByFirebaseUid(firebaseUid: string) {
 export async function getUserByEmail(email: string) {
   return await prisma.user.findUnique({
     where: { email },
+  });
+}
+
+/**
+ * Get user from database by friend code
+ */
+export async function getUserByFriendCode(friendCode: string) {
+  return await prisma.user.findUnique({
+    where: { friendCode },
   });
 }
 

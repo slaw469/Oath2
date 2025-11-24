@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import StepIndicator from "@/components/create-oath/StepIndicator";
 import ChooseOathType from "@/components/create-oath/ChooseOathType";
 import DefineOath from "@/components/create-oath/DefineOath";
@@ -10,6 +11,7 @@ import SelectOpponent from "@/components/create-oath/SelectOpponent";
 import ReviewOath from "@/components/create-oath/ReviewOath";
 
 export default function CreateOathPage() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [oathData, setOathData] = useState({
     type: "",
@@ -22,6 +24,25 @@ export default function CreateOathPage() {
     opponent: null,
     privacy: "public",
   });
+
+  // If navigated from the Friends "Challenge" button, preselect Versus and opponent
+  useEffect(() => {
+    const opponentParam = searchParams.get("opponent");
+    if (!opponentParam) return;
+
+    try {
+      const opponent = JSON.parse(decodeURIComponent(opponentParam));
+      setOathData((prev) => ({
+        ...prev,
+        type: "versus",
+        opponent,
+      }));
+      // Skip the type selection step when coming from a friend challenge
+      setCurrentStep(2);
+    } catch (err) {
+      console.error("Failed to parse opponent from query params:", err);
+    }
+  }, [searchParams]);
 
   const totalSteps = 6;
 

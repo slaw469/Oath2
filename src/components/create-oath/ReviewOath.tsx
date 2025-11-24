@@ -90,18 +90,22 @@ export default function ReviewOath({ onBack, oathData }: ReviewOathProps) {
           return;
         }
 
-        const verificationPrompt = `Verify that the user completed their commitment for: ${oathData.title}. ${oathData.description}`;
+        const verificationPrompt = oathData.isLeetCodeDaily
+          ? `Verify that the user completed their daily LeetCode problem for: ${oathData.title}. ${oathData.description}`
+          : `Verify that the user completed their commitment for: ${oathData.title}. ${oathData.description}`;
 
         result = await createOath(dbUser.id, {
           title: oathData.title,
           description: oathData.description,
-          type: oathData.oathType || 'CUSTOM', // Use selected oath type
+          type: oathData.isLeetCodeDaily ? 'DAILY' : (oathData.oathType || 'CUSTOM'), // Daily for LeetCode
           startDate: new Date(),
           endDate: new Date(oathData.endDate),
           stakeAmount: oathData.stake,
           currencyType: oathData.currencyType || 'GEMS',
           verificationPrompt,
           participantUserIds: [dbUser.id, oathData.opponent.id],
+          isLeetCodeDaily: !!oathData.isLeetCodeDaily,
+          leetcodeUsername: oathData.leetcodeUsername,
         });
       } else {
         toast.error('Only solo and versus oaths are supported right now');

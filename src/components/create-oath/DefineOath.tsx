@@ -31,10 +31,18 @@ export default function DefineOath({ onNext, onBack, onUpdateData, currentData }
   const [title, setTitle] = useState(currentData.title || "");
   const [description, setDescription] = useState(currentData.description || "");
   const [category, setCategory] = useState(currentData.category || "");
+   const [isLeetCodeDaily, setIsLeetCodeDaily] = useState<boolean>(currentData.isLeetCodeDaily || false);
+   const [leetcodeUsername, setLeetcodeUsername] = useState<string>(currentData.leetcodeUsername || "");
 
   const handleContinue = () => {
     if (title && description && category) {
-      onUpdateData({ title, description, category });
+      onUpdateData({
+        title,
+        description,
+        category,
+        isLeetCodeDaily,
+        leetcodeUsername: leetcodeUsername.trim() || undefined,
+      });
       onNext();
     }
   };
@@ -115,6 +123,49 @@ export default function DefineOath({ onNext, onBack, onUpdateData, currentData }
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Daily LeetCode Toggle (for versus-style coding challenges) */}
+      <div className="space-y-3 rounded-lg bg-surface/60 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-white">Make this a Daily LeetCode challenge</p>
+            <p className="text-xs text-white/60">
+              One accepted LeetCode problem per day. Progress is auto-verified via the LeetCode API.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsLeetCodeDaily(!isLeetCodeDaily)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              isLeetCodeDaily ? "bg-primary" : "bg-white/20"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-black transition-transform ${
+                isLeetCodeDaily ? "translate-x-5" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        {isLeetCodeDaily && (
+          <div className="space-y-2 pt-2">
+            <label className="block text-xs font-medium text-white">
+              Your LeetCode username <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              value={leetcodeUsername}
+              onChange={(e) => setLeetcodeUsername(e.target.value)}
+              placeholder="e.g. miguel_leetcode"
+              className="w-full rounded-lg border-2 border-white/10 bg-background-dark px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-primary focus:outline-none"
+            />
+            <p className="text-[11px] text-white/50">
+              We use this to verify your daily completion automatically. Your opponent will need to set theirs too.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation Buttons */}

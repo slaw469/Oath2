@@ -4,11 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { useDbUser } from '@/hooks/useDbUser';
 import { getFriends, removeFriend } from '@/actions/friends';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 const AllFriends = () => {
   const { dbUser } = useDbUser();
+  const router = useRouter();
   const [friends, setFriends] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     if (dbUser) {
@@ -37,6 +40,25 @@ const AllFriends = () => {
     } else {
       toast.error(result.error || 'Failed to remove friend');
     }
+    setOpenMenuId(null);
+  }
+
+  function handleChallenge(friend: any) {
+    if (!dbUser) {
+      toast.error('You must be logged in to create a challenge');
+      return;
+    }
+
+    const opponentPayload = encodeURIComponent(
+      JSON.stringify({
+        id: friend.id,
+        displayName: friend.displayName,
+        email: friend.email,
+        photoURL: friend.photoURL,
+      }),
+    );
+
+    router.push(`/create-oath?opponent=${opponentPayload}`);
   }
 
   if (loading) {
@@ -99,19 +121,49 @@ const AllFriends = () => {
                   No Oaths yet — break the ice.
                 </div>
               </div>
-              <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+              <div className="flex w-full items-center justify-end gap-2 sm:w-auto relative">
                 <button 
-                  onClick={() => toast('Oath creation coming soon!')}
+                  onClick={() => handleChallenge(friend)}
                   className="h-9 rounded-full bg-primary px-5 text-sm font-bold text-background-dark transition-opacity hover:opacity-90"
                 >
                   Challenge
                 </button>
                 <button 
-                  onClick={() => handleRemoveFriend(friend.friendshipId, friend.displayName || friend.email)}
+                  onClick={() =>
+                    setOpenMenuId((prev) =>
+                      prev === friend.friendshipId ? null : friend.friendshipId,
+                    )
+                  }
                   className="flex size-9 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20"
                 >
                   <span className="material-symbols-outlined text-xl">more_horiz</span>
                 </button>
+                {openMenuId === friend.friendshipId && (
+                  <div className="absolute right-0 top-10 z-20 w-44 rounded-lg bg-surface border border-white/10 shadow-lg py-1 text-sm text-white/80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast('Friend profile coming soon');
+                        setOpenMenuId(null);
+                      }}
+                      className="block w-full px-4 py-2 text-left hover:bg-white/10"
+                    >
+                      View profile (coming soon)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveFriend(
+                          friend.friendshipId,
+                          friend.displayName || friend.email,
+                        )
+                      }
+                      className="block w-full px-4 py-2 text-left text-danger hover:bg-white/10"
+                    >
+                      Remove friend
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </React.Fragment>

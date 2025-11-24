@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useDbUser } from '@/hooks/useDbUser';
-import { addFriendByEmail } from '@/actions/friends';
+import { addFriendByEmail, addFriendByCode } from '@/actions/friends';
 import toast from 'react-hot-toast';
 import FriendsStats from '@/components/FriendsStats';
 import TopRivals from '@/components/TopRivals';
@@ -18,6 +18,8 @@ export default function FriendsPage() {
   const router = useRouter();
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [friendEmail, setFriendEmail] = useState('');
+  const [friendCode, setFriendCode] = useState('');
+  const [addMode, setAddMode] = useState<'email' | 'code'>('email');
   const [addingFriend, setAddingFriend] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -40,15 +42,22 @@ export default function FriendsPage() {
 
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!dbUser || !friendEmail) return;
+    if (!dbUser) return;
+
+    if (addMode === 'email' && !friendEmail) return;
+    if (addMode === 'code' && !friendCode) return;
 
     setAddingFriend(true);
-    const result = await addFriendByEmail(dbUser.id, friendEmail);
+    const result =
+      addMode === 'email'
+        ? await addFriendByEmail(dbUser.id, friendEmail)
+        : await addFriendByCode(dbUser.id, friendCode);
     setAddingFriend(false);
 
     if (result.success) {
       toast.success('Friend request sent!');
       setFriendEmail('');
+      setFriendCode('');
       setShowAddFriendModal(false);
       setRefreshKey(prev => prev + 1); // Trigger refresh
     } else {
@@ -72,6 +81,14 @@ export default function FriendsPage() {
             <p className="mt-2 text-lg text-white/60">
               See your circle, your record, and who to challenge next.
             </p>
+            {dbUser?.friendCode && (
+              <p className="mt-2 text-sm text-primary/90">
+                Your friend code:{' '}
+                <span className="font-mono font-bold bg-primary/10 px-2 py-0.5 rounded">
+                  {dbUser.friendCode}
+                </span>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -125,20 +142,56 @@ export default function FriendsPage() {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
+            <div className="mb-4 flex gap-2 rounded-full bg-background-dark/60 p-1">
+              <button
+                type="button"
+                onClick={() => setAddMode('email')}
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold ${
+                  addMode === 'email'
+                    ? 'bg-primary text-background-dark'
+                    : 'text-white/70 hover:bg-white/5'
+                }`}
+              >
+                By Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddMode('code')}
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold ${
+                  addMode === 'code'
+                    ? 'bg-primary text-background-dark'
+                    : 'text-white/70 hover:bg-white/5'
+                }`}
+              >
+                By Code
+              </button>
+            </div>
             <form onSubmit={handleAddFriend}>
               <div className="mb-4">
                 <label className="mb-2 block text-sm font-medium text-white/80">
-                  Friend's Email
+                  {addMode === 'email' ? "Friend's Email" : "Friend's Code"}
                 </label>
-                <input
-                  type="email"
-                  value={friendEmail}
-                  onChange={(e) => setFriendEmail(e.target.value)}
-                  placeholder="friend@example.com"
-                  className="w-full rounded-lg border border-white/10 bg-background-dark px-4 py-3 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  required
-                  autoFocus
-                />
+                {addMode === 'email' ? (
+                  <input
+                    type="email"
+                    value={friendEmail}
+                    onChange={(e) => setFriendEmail(e.target.value)}
+                    placeholder="friend@example.com"
+                    className="w-full rounded-lg border border-white/10 bg-background-dark px-4 py-3 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    required
+                    autoFocus
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={friendCode}
+                    onChange={(e) => setFriendCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. ABCD1234"
+                    className="w-full rounded-lg border border-white/10 bg-background-dark px-4 py-3 text-white placeholder:text-white/40 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+                    required
+                    autoFocus
+                  />
+                )}
               </div>
               <div className="flex gap-3">
                 <button

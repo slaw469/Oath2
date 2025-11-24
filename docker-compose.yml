@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    # Reuse your existing `.env.local` for all environment variables
+    env_file:
+      - .env.local
+    # Mount source code for hot reloading; keep node_modules inside the container
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+

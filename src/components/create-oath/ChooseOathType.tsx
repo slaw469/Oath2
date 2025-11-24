@@ -51,6 +51,20 @@ export default function ChooseOathType({ onNext, onUpdateData, currentData }: Ch
     }
   };
 
+  const handleLeetCodeTemplate = () => {
+    // Preconfigure a Daily LeetCode versus challenge template
+    onUpdateData({
+      type: 'versus',
+      title: 'Daily LeetCode — One problem, every day',
+      description:
+        'Complete at least one accepted LeetCode problem every day. If you miss a day, your stake is paid out to your rival.',
+      category: 'learning',
+      isLeetCodeDaily: true,
+    });
+    setSelectedType('versus');
+    onNext();
+  };
+
   return (
     <div className="space-y-8">
       {/* Oath Type Cards */}
@@ -88,6 +102,24 @@ export default function ChooseOathType({ onNext, onUpdateData, currentData }: Ch
             </div>
           </button>
         ))}
+      </div>
+
+      {/* Quick Templates */}
+      <div className="space-y-3 rounded-lg bg-surface/60 p-4">
+        <p className="text-sm font-medium text-white">Quick templates</p>
+        <p className="text-xs text-white/60">
+          Start from a pre-built challenge, then customize the details in the next steps.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleLeetCodeTemplate}
+            className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            <span className="text-base">🧠</span>
+            <span>Daily LeetCode vs Friend</span>
+          </button>
+        </div>
       </div>
 
       {/* Help Text */}

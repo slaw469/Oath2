@@ -25,7 +25,7 @@ export default function SetDuration({ onNext, onBack, onUpdateData, currentData 
   const [selectedDuration, setSelectedDuration] = useState(currentData.duration || "");
   const [endDate, setEndDate] = useState(currentData.endDate || "");
   const [customDate, setCustomDate] = useState(false);
-  const [oathType, setOathType] = useState(currentData.oathType || "CUSTOM");
+  const [oathType, setOathType] = useState(currentData.oathType || (currentData.isLeetCodeDaily ? "DAILY" : "CUSTOM"));
 
   const handleRecurringSelect = (id: string, type: string) => {
     setSelectedDuration(id);

@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useDbUser } from "@/hooks/useDbUser";
+import { updateLeetCodeUsername } from "@/actions/users";
+import toast from "react-hot-toast";
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
+  const { dbUser, loading: dbLoading } = useDbUser();
   const router = useRouter();
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [savingLeetcode, setSavingLeetcode] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -14,7 +20,15 @@ export default function SettingsPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  useEffect(() => {
+    if (dbUser?.leetcodeUsername) {
+      setLeetcodeUsername(dbUser.leetcodeUsername);
+    } else {
+      setLeetcodeUsername("");
+    }
+  }, [dbUser]);
+
+  if (loading || dbLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background-dark">
         <div className="text-center">
@@ -65,8 +79,61 @@ export default function SettingsPage() {
                     className="w-full rounded-lg bg-background-dark border border-white/10 px-4 py-3 text-white/60 cursor-not-allowed"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-2">
+                    LeetCode Username
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={leetcodeUsername}
+                      onChange={(e) => setLeetcodeUsername(e.target.value)}
+                      placeholder="Used for Daily LeetCode-style oaths"
+                      className="w-full rounded-lg bg-background-dark border border-white/10 px-4 py-3 text-white placeholder:text-white/40 focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      disabled={savingLeetcode || !dbUser}
+                      onClick={async () => {
+                        if (!dbUser) return;
+                        setSavingLeetcode(true);
+                        const result = await updateLeetCodeUsername(dbUser.id, leetcodeUsername);
+                        setSavingLeetcode(false);
+                        if (result.success) {
+                          toast.success("LeetCode username saved.");
+                        } else {
+                          toast.error(result.error || "Failed to save LeetCode username.");
+                        }
+                      }}
+                      className="whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-bold text-black disabled:opacity-60"
+                    >
+                      {savingLeetcode ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-white/50">
+                    This username is used to auto-verify Daily LeetCode challenges and mark your
+                    oath days as complete.
+                  </p>
+                </div>
+                {dbUser?.friendCode && (
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Friend Code</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        disabled
+                        value={dbUser.friendCode}
+                        className="w-full rounded-lg bg-background-dark border border-white/10 px-4 py-3 text-white/80 font-mono cursor-not-allowed"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-white/50">
+                      Share this code so friends can add you quickly.
+                    </p>
+                  </div>
+                )}
                 <p className="text-sm text-white/60">
-                  Profile editing coming soon. Contact support if you need to make changes.
+                  Name and email are managed by your sign-in provider. Contact support if you need
+                  to change them.
                 </p>
               </div>
             </div>

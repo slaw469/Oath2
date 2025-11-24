@@ -78,11 +78,14 @@ const Header = () => {
             </Link>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/gems"
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-primary hover:bg-primary/30 transition-colors"
+            >
               <span className="truncate">💎 {dbUser?.gems?.toLocaleString() || '0'}</span>
-            </button>
+            </Link>
           </div>
           <button className="relative flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 min-w-0 w-10 bg-surface text-white/80 transition-colors hover:text-white">
             <span className="material-symbols-outlined">notifications</span>

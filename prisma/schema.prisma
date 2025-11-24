@@ -19,14 +19,16 @@ model User {
   email         String   @unique
   displayName   String?
   photoURL      String?
+  leetcodeUsername String? // Optional LeetCode username for automated verification
+  friendCode    String?  @unique // Short code users can share to add friends
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
   // Internal credits (v1 stakes currency)
-  credits       Int      @default(1000) // Starting balance
+  credits       Int      @default(0) // Starting balance (new users start at 0)
   
   // In-app currency (Gems) - for testing and non-real-money stakes
-  gems          Int      @default(10000) // Starting gems balance
+  gems          Int      @default(100) // Starting gems balance for new users
   
   // Relationships
   oathsParticipating  OathParticipant[]
@@ -102,6 +104,7 @@ model Oath {
   description     String
   type            OathType
   status          OathStatus  @default(DRAFT)
+  isLeetCodeDaily Boolean     @default(false) // Marks Daily LeetCode oaths
   
   // Duration
   startDate       DateTime

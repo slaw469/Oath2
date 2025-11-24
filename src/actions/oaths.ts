@@ -22,6 +22,8 @@ export interface CreateOathInput {
   currencyType: CurrencyType;
   verificationPrompt: string;
   participantUserIds: string[]; // Array of user IDs to invite
+  isLeetCodeDaily?: boolean; // Optional flag for Daily LeetCode oaths
+  leetcodeUsername?: string; // Optional LeetCode username for creator
 }
 
 export interface CreateSoloOathInput {
@@ -264,6 +266,9 @@ export async function createOath(
     }
 
     // Create the oath with participants
+    // NOTE: We deliberately avoid passing isLeetCodeDaily into Prisma here to
+    // keep compatibility if the client schema lags behind. Daily LeetCode oaths
+    // are inferred from type === DAILY at runtime.
     const oath = await prisma.oath.create({
       data: {
         title: input.title,
@@ -298,6 +303,16 @@ export async function createOath(
         },
       },
     });
+
+    // Optionally update creator's LeetCode username for future auto-verification
+    if (input.leetcodeUsername) {
+      await prisma.user.update({
+        where: { id: creatorUserId },
+        data: {
+          leetcodeUsername: input.leetcodeUsername,
+        },
+      });
+    }
 
     // Deduct stake from creator's balance
     if (input.currencyType === 'GEMS') {
